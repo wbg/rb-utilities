@@ -72,9 +72,7 @@ class KoelnerPhonetik
 
 private
   def self.clean_string(s)
-    s = s.downcase
-    UMLAUTS.each_pair {|u,v| s.gsub!(u, v) }
-    return(s)
+    s.downcase.gsub(/ä|ö|ü|ß|ph/) {|s| UMLAUTS[s]}
   end
 end
 
