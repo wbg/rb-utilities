@@ -67,12 +67,7 @@ class KoelnerPhonetik
     ret = res.empty? ? [] : [res[0]]
     # remove duplicates
     (1..(res.size-1)).each { |i| ret.push res[i] unless res[i] == res[i-1] }
-    # finished
-    if ret.size < 2 
-      ret.join
-    else 
-      ret[0] + ret[1..-1].join.gsub('0', '')
-    end
+    ret.shift.to_s + ret.join.gsub('0','')
   end
 
 private
