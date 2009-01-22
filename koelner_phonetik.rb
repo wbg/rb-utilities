@@ -16,7 +16,7 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER 
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-class Phonetics
+class KoelnerPhonetik
   UMLAUTS = { 'ä' => 'a', 'ö' => 'o', 'ü' => 'u', 'ß' => 'ss', 'ph' => 'f' }
   SIMPLE_CODES = { 
     /(a|e|i|j|o|u|y)/   => '0',
@@ -34,19 +34,20 @@ class Phonetics
   FOLLOW = /(sc|zc|cx|kx|qx)/ #8 
   START_BEFORE = /(ca|ch|ck|cl|co|cq|cr|cu|cx)/ # 4
 
-  def self.koelner(s)
+  def self.compute(s)
     sa = clean_string(s).scan(/./)
+    return "" if sa.empty?
     res = Array.new sa.size
     sa.each_index do |i|
       b = sa[i]
       c = sa.size > i+1 ? sa[i+1] : ""
       a = i > 0 ? sa[i-1] : ""
       if i == 0  and b+c == "cr"
-        res[0] = 4 
+        res[0] = '4' 
       elsif i == 0 and (b+c =~ START_BEFORE) == 0 
-        res[0] = 4
+        res[0] = '4'
       elsif i > 0 and (a+b =~ FOLLOW) == 0
-        res[i] = 8
+        res[i] = '8'
       else
         if (b+c =~ BEFORE_EX[0][0]) == 0
           res[i] = BEFORE_EX[0][1]
@@ -54,7 +55,7 @@ class Phonetics
           res[i] = BEFORE_EX[1][1]
         else
           SIMPLE_CODES.each_pair do |r,v|
-            if (b =~ r) == 0 
+            if (b =~ r) == 0
               res[i] = v
               break
             end
@@ -62,25 +63,33 @@ class Phonetics
         end
       end
     end
-    res.join
-  end
-  
-  def self.koelner_no_zeros(s)
-    koelner(s).gsub('0','')
+    res.compact!
+    ret = res.empty? ? [] : [res[0]]
+    # remove duplicates
+    (1..(res.size-1)).each { |i| ret.push res[i] unless res[i] == res[i-1] }
+    # finished
+    if ret.size < 2 
+      ret.join
+    else 
+      ret[0] + ret[1..-1].join.gsub('0', '')
+    end
   end
 
 private
   def self.clean_string(s)
-    s.downcase!
+    s = s.downcase
     UMLAUTS.each_pair {|u,v| s.gsub!(u, v) }
     return(s)
   end
 end
 
 class String
+  def koelner_phonetik
+    KoelnerPhonetik.compute(to_s)
+  end
   def sounds_like?(s, style=:koelner)
     if style==:koelner 
-      Phonetics.koelner_no_zeros(to_s) == Phonetics.koelner_no_zeros(s.to_s)
+      to_s.koelner_phonetik == s.koelner_phonetik
     else
       to_s == s.to_s
     end
